@@ -20,6 +20,11 @@ jobs:
 
       - name: Install NPM Dependencies
         run: npm install
+        
+      - name: Force iOS Version Upgrade
+        run: |
+          sed -i '' 's/platform :ios, .*/platform :ios, '\''16.0'\''/g' ios/App/Podfile
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 16.0;/g' ios/App/App.xcodeproj/project.pbxproj
 
       - name: Sync Capacitor iOS Bridge
         run: npx cap sync ios
