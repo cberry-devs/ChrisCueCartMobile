@@ -1,0 +1,49 @@
+name: Build Unsigned iOS App
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install NPM Dependencies
+        run: npm install
+
+      - name: Sync Capacitor iOS Bridge
+        run: npx cap sync ios
+
+      - name: Compile Xcode Binary (Unsigned)
+        run: |
+          xcodebuild clean build \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_IDENTITY=""
+
+      - name: Package into Sideloadable IPA
+        run: |
+          mkdir Payload
+          cp -r build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qr ChrisCueCartPro.ipa Payload
+
+      - name: Upload Finished App
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChrisCueCartPro-iOS
+          path: ChrisCueCartPro.ipa
