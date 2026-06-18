@@ -1,0 +1,19 @@
+{
+  "name": "chriscuecartmobile",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/ios": "^8.4.0",
+    "@capgo/capacitor-native-audio": "^8.4.12"
+  }
+}
