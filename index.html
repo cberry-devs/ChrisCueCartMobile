@@ -29,7 +29,7 @@
     .workspace-view { display: none; flex: 1; height: 100%; box-sizing: border-box; overflow: hidden; min-width: 0; position: relative; }
     .workspace-view.active { display: flex; }
 
-    /* Sliding Drawer Left: Browser */
+    /* Drawer Left: Browser */
     .browser-sidebar { position: absolute; left: 0; top: 0; height: 100%; z-index: 50; width: 280px; background: rgba(22, 22, 26, 0.98); backdrop-filter: blur(10px); border-right: 1px solid #2d2d35; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); }
     .browser-sidebar.is-open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.8); }
     .browser-file-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
@@ -43,7 +43,7 @@
     input.page-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
     .cart-container { flex: 1; display: grid; gap: 10px; min-height: 0; min-width: 0; }
 
-    /* Sliding Drawer Right: Inspector */
+    /* Drawer Right: Inspector */
     .inspector { position: absolute; right: 0; top: 0; height: 100%; z-index: 50; width: 380px; background: rgba(22, 22, 26, 0.98); backdrop-filter: blur(10px); border-left: 1px solid #2d2d35; display: flex; flex-direction: column; padding: 20px; gap: 20px; box-sizing: border-box; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); }
     .inspector.is-open { transform: translateX(0); box-shadow: -10px 0 30px rgba(0,0,0,0.8); }
     .inspector-title { color: var(--text-dim); text-transform: uppercase; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; }
@@ -79,9 +79,11 @@
     .action-btn { background: #2d2d35; border: 1px solid #3d3d45; color: #fff; padding: 10px 15px; border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; font-weight: bold; border: none; }
     .action-btn:hover { background: #3d3d45; }
     .action-btn.primary { background: var(--accent); color: #000; }
+    .action-btn.success { background: #00ff88; color: #000; }
     #assetBrowserInput, #editorLoadFileInput, #relinkInput { display: none; }
     input[type=range] { width: 100%; accent-color: var(--accent); background: transparent; }
     .meta-row { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); margin-top: 5px; text-transform: uppercase; align-items: center;}
+    .editor-dim-overlay { position: absolute; top: 0; height: 100%; background: rgba(0,0,0,0.7); pointer-events: none; z-index: 3; }
 
     /* LOBBY & MODAL STYLES */
     .full-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 500; display: flex; justify-content: center; align-items: center; flex-direction: column; }
@@ -102,10 +104,7 @@
   <div id="lobbyScreen" class="full-overlay">
     <div class="modal-card">
       <h2>Chris' Cue Cart Workspace</h2>
-      <div class="form-group">
-        <label>Saved Shows</label>
-        <div class="show-list" id="lobbyShowList"></div>
-      </div>
+      <div class="form-group"><label>Saved Shows</label><div class="show-list" id="lobbyShowList"></div></div>
       <button class="action-btn primary" onclick="showCreatePrompt()" style="margin-top: 10px;">➕ CREATE NEW SHOW</button>
     </div>
   </div>
@@ -113,10 +112,7 @@
   <div id="createShowScreen" class="full-overlay" style="display: none; z-index: 501;">
     <div class="modal-card">
       <h2>Create New Show Matrix</h2>
-      <div class="form-group">
-        <label>Show Name</label>
-        <input type="text" id="newShowName" placeholder="e.g. Morning Drive">
-      </div>
+      <div class="form-group"><label>Show Name</label><input type="text" id="newShowName" placeholder="e.g. Morning Drive"></div>
       <div style="display: flex; gap: 15px;">
         <div class="form-group" style="flex:1;"><label>Rows</label><input type="number" id="newShowRows" value="4" min="1" max="10"></div>
         <div class="form-group" style="flex:1;"><label>Columns</label><input type="number" id="newShowCols" value="8" min="1" max="10"></div>
@@ -165,9 +161,7 @@
           <aside class="browser-sidebar" id="browserSidebar">
             <div class="inspector-title">Cue File Browser</div>
             <button class="action-btn primary" onclick="document.getElementById('assetBrowserInput').click()" style="width: 100%; margin: 15px 0;">➕ ADD TO LIBRARY</button>
-            <div id="browserFileList" class="browser-file-list">
-              <div style="color: var(--text-dim); font-size: 0.8rem; text-align: center; margin-top: 20px; line-height: 1.5;">Import local files.<br><br>With EDIT MODE on, tap a pad, then assign from here.</div>
-            </div>
+            <div id="browserFileList" class="browser-file-list"></div>
           </aside>
 
           <div class="grid-section">
@@ -207,17 +201,36 @@
 
         <div id="viewEditor" class="workspace-view">
           <div class="editor-layout">
-            <div class="btn-group" style="margin-bottom: 5px;">
-              <button class="action-btn primary" onclick="document.getElementById('editorLoadFileInput').click()">📂 OPEN FILE</button>
-              <button class="action-btn" onclick="editorPlay()">▶ PLAY</button>
-              <button class="action-btn" onclick="editorStop()">⏹ STOP</button>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="btn-group">
+                  <button class="action-btn" onclick="editorPlay()">▶ AUDITION TRIM</button>
+                  <button class="action-btn" onclick="editorStop()">⏹ STOP</button>
+                </div>
+                <button class="action-btn success" onclick="saveEditorToPad()">💾 SAVE TRIM TO PAD</button>
             </div>
+            
             <div class="editor-wave-large" id="editorWaveWrapper">
               <canvas id="editorCanvas"></canvas>
-              <div class="selection-overlay" id="editorSelect" style="display: none;"></div>
+              <div id="editorDimLeft" class="editor-dim-overlay" style="left:0; width:0%;"></div>
+              <div id="editorDimRight" class="editor-dim-overlay" style="right:0; width:0%;"></div>
               <div id="editorPlayhead" class="play-line" style="background: white; z-index: 5; display: none;"></div>
             </div>
-            <div id="editorMetrics" style="font-size: 0.8rem; color: var(--text-dim); text-align: center;">Workspace Empty</div>
+            
+            <div style="display: flex; gap: 20px; background: var(--panel); padding: 15px; border-radius: var(--radius); border: 1px solid #2d2d35;">
+                <div class="form-group" style="flex: 2;">
+                    <div style="display: flex; justify-content: space-between;"><label>IN POINT</label><span id="edInLabel" style="font-size:0.75rem; color:var(--accent);">0.00s</span></div>
+                    <input type="range" id="edInSlider" min="0" max="100" value="0" step="0.01" oninput="updateEditorVisuals()">
+                </div>
+                <div class="form-group" style="flex: 2;">
+                    <div style="display: flex; justify-content: space-between;"><label>OUT POINT</label><span id="edOutLabel" style="font-size:0.75rem; color:var(--accent);">0.00s</span></div>
+                    <input type="range" id="edOutSlider" min="0" max="100" value="100" step="0.01" oninput="updateEditorVisuals()">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between;"><label>GAIN</label><span id="edGainLabel" style="font-size:0.75rem; color:var(--accent);">1.0x</span></div>
+                    <input type="range" id="edGainSlider" min="0" max="3" value="1" step="0.1" oninput="updateEditorVisuals()">
+                </div>
+            </div>
+            <div id="editorMetrics" style="font-size: 0.8rem; color: var(--text-dim); text-align: center;">Load a file to begin trimming.</div>
           </div>
         </div>
       </main>
@@ -225,18 +238,16 @@
   </div>
 
   <input type="file" id="assetBrowserInput" accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff" multiple>
-  <input type="file" id="editorLoadFileInput" accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff">
   <input type="file" id="relinkInput" accept="audio/*,.wav,.mp3,.m4a,.aif,.aiff" multiple onchange="handleRelink(event)">
-
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const masterGain = audioCtx.createGain();
-    masterGain.gain.value = 1.0; 
-    masterGain.connect(audioCtx.destination);
-
+    const masterGain = audioCtx.createGain(); masterGain.gain.value = 1.0; masterGain.connect(audioCtx.destination);
     let soundBank = [], activeSources = [], currentPage = 0, selectedCartIdx = null, browserFiles = [];
     let zoomFactor = 1.0, scrollPos = 0;
-    let editorBuffer = null, editorPlayNode = null, editorPeaks = null;
+    
+    // Editor State
+    let editorBuffer = null, editorPlayNode = null, editorGainNode = null, editorPeaks = null;
+    let currentEditorPad = null;
     let currentShowName = "", gridConfig = { rows: 4, cols: 8 }, isEditModeActive = false, currentlyEditingPadIdx = null;
 
     document.addEventListener('touchstart', function() { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { passive: true });
@@ -246,12 +257,10 @@
       document.querySelectorAll('.workspace-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       if(view === 'matrix') {
-        document.getElementById('viewMatrix').classList.add('active');
-        document.getElementById('tabMatrix').classList.add('active');
+        document.getElementById('viewMatrix').classList.add('active'); document.getElementById('tabMatrix').classList.add('active');
         requestAnimationFrame(() => { resizeAllCanvases(); drawWaveform(); });
       } else {
-        document.getElementById('viewEditor').classList.add('active');
-        document.getElementById('tabEditor').classList.add('active');
+        document.getElementById('viewEditor').classList.add('active'); document.getElementById('tabEditor').classList.add('active');
         requestAnimationFrame(() => { resizeAllCanvases(); drawEditor(); });
       }
     }
@@ -259,50 +268,28 @@
     function populateLobby() {
       const list = document.getElementById('lobbyShowList'); list.innerHTML = '';
       const shows = Object.keys(localStorage).filter(k => k.startsWith('ccc_show_'));
-      if(shows.length === 0) { list.innerHTML = '<div style="padding:15px; color:#888; text-align:center; font-size:0.85rem;">No saved shows found. Create one to begin.</div>'; } 
-      else {
-        shows.forEach(showKey => {
-          const showData = JSON.parse(localStorage.getItem(showKey));
-          const div = document.createElement('div'); div.className = 'show-item';
-          div.innerHTML = `<span>${showData.name}</span> <span class="dim">${showData.rows}x${showData.cols} Grid</span>`;
-          div.onclick = () => loadShow(showKey); list.appendChild(div);
-        });
-      }
+      if(shows.length === 0) list.innerHTML = '<div style="padding:15px; color:#888; text-align:center; font-size:0.85rem;">No saved shows found. Create one to begin.</div>';
+      else shows.forEach(k => { const d = JSON.parse(localStorage.getItem(k)); const div = document.createElement('div'); div.className = 'show-item'; div.innerHTML = `<span>${d.name}</span> <span class="dim">${d.rows}x${d.cols} Grid</span>`; div.onclick = () => loadShow(k); list.appendChild(div); });
     }
 
     function showCreatePrompt() { document.getElementById('createShowScreen').style.display = 'flex'; }
     function cancelCreate() { document.getElementById('createShowScreen').style.display = 'none'; }
     function confirmCreateShow() {
-      const name = document.getElementById('newShowName').value || 'Untitled Show';
-      const r = parseInt(document.getElementById('newShowRows').value) || 4;
-      const c = parseInt(document.getElementById('newShowCols').value) || 8;
-      const newShowData = { name: name, rows: r, cols: c, banks: [] }; const totalPads = r * c;
-      for(let i=0; i<4; i++) {
-        const bank = [];
-        for(let j=0; j<totalPads; j++) { bank.push({ id: `p${i}c${j}`, title: `Slot ${j + 1}`, fileName: 'Empty', color: '#00f2ff' }); }
-        newShowData.banks.push(bank);
-      }
-      const safeKey = 'ccc_show_' + name.replace(/\s+/g, '_').toLowerCase();
-      localStorage.setItem(safeKey, JSON.stringify(newShowData));
-      cancelCreate(); loadShow(safeKey);
+      const name = document.getElementById('newShowName').value || 'Untitled Show'; const r = parseInt(document.getElementById('newShowRows').value) || 4; const c = parseInt(document.getElementById('newShowCols').value) || 8;
+      const total = r * c; const banks = [];
+      for(let i=0; i<4; i++) { const bank = []; for(let j=0; j<total; j++) bank.push({ id: `p${i}c${j}`, title: `Slot ${j + 1}`, fileName: 'Empty', color: '#00f2ff', inPoint: 0, outPoint: null, gain: 1.0 }); banks.push(bank); }
+      localStorage.setItem('ccc_show_' + name.replace(/\s+/g, '_').toLowerCase(), JSON.stringify({ name: name, rows: r, cols: c, banks: banks }));
+      cancelCreate(); loadShow('ccc_show_' + name.replace(/\s+/g, '_').toLowerCase());
     }
 
-    function loadShow(storageKey) {
-      const data = JSON.parse(localStorage.getItem(storageKey));
-      currentShowName = data.name; gridConfig.rows = data.rows; gridConfig.cols = data.cols;
-      
-      // Safety Wipe (V4 Fix)
+    function loadShow(key) {
+      const data = JSON.parse(localStorage.getItem(key)); currentShowName = data.name; gridConfig.rows = data.rows; gridConfig.cols = data.cols;
       currentPage = 0; selectedCartIdx = null; isEditModeActive = false; currentlyEditingPadIdx = null;
-      document.getElementById('editModeToggle').checked = false;
-      document.getElementById('workspaceWrapper').classList.remove('edit-mode-active');
-      document.querySelectorAll('.page-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-      document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...';
-
-      soundBank = data.banks.map(bank => bank.map(cart => ({ ...cart, audioUrl: null, peakData: null, duration: 0, cuePoint: 0, isPlaying: false })));
+      document.getElementById('editModeToggle').checked = false; document.getElementById('workspaceWrapper').classList.remove('edit-mode-active');
+      document.querySelectorAll('.page-btn').forEach((b, i) => b.classList.toggle('active', i === 0)); document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...';
+      soundBank = data.banks.map(b => b.map(c => ({ ...c, audioUrl: null, peakData: null, duration: 0, isPlaying: false, inPoint: c.inPoint || 0, outPoint: c.outPoint || null, gain: c.gain || 1.0 })));
       document.getElementById('activeShowLabel').innerText = `[ ${currentShowName} ]`;
-      
-      const container = document.getElementById('cartContainer');
-      container.style.gridTemplateColumns = `repeat(${gridConfig.cols}, 1fr)`; container.style.gridTemplateRows = `repeat(${gridConfig.rows}, 1fr)`;
+      const cont = document.getElementById('cartContainer'); cont.style.gridTemplateColumns = `repeat(${gridConfig.cols}, 1fr)`; cont.style.gridTemplateRows = `repeat(${gridConfig.rows}, 1fr)`;
       document.getElementById('lobbyScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex';
       resizeAllCanvases(); renderGrid(); checkOfflineStatus();
     }
@@ -311,250 +298,256 @@
     function saveCurrentShowState() {
       if(!currentShowName) return;
       const safeKey = 'ccc_show_' + currentShowName.replace(/\s+/g, '_').toLowerCase();
-      const serializedBanks = soundBank.map(bank => bank.map(cart => ({ id: cart.id, title: cart.title, fileName: cart.fileName, color: cart.color })));
-      localStorage.setItem(safeKey, JSON.stringify({ name: currentShowName, rows: gridConfig.rows, cols: gridConfig.cols, banks: serializedBanks }));
+      const serialized = soundBank.map(b => b.map(c => ({ id: c.id, title: c.title, fileName: c.fileName, color: c.color, inPoint: c.inPoint, outPoint: c.outPoint, gain: c.gain })));
+      localStorage.setItem(safeKey, JSON.stringify({ name: currentShowName, rows: gridConfig.rows, cols: gridConfig.cols, banks: serialized }));
     }
 
     function checkOfflineStatus() {
-      let hasOffline = false;
-      for(let p=0; p<soundBank.length; p++) {
-        for(let c=0; c<soundBank[p].length; c++) { if(soundBank[p][c].fileName !== 'Empty' && !soundBank[p][c].audioUrl) hasOffline = true; }
-      }
+      let hasOffline = false; for(let p=0; p<soundBank.length; p++) for(let c=0; c<soundBank[p].length; c++) if(soundBank[p][c].fileName !== 'Empty' && !soundBank[p][c].audioUrl) hasOffline = true;
       document.getElementById('relinkBtn').style.display = hasOffline ? 'block' : 'none';
     }
 
     async function handleRelink(e) {
       const files = Array.from(e.target.files);
-      for(let file of files) {
-        for(let p=0; p<soundBank.length; p++) {
-          for(let c=0; c<soundBank[p].length; c++) {
-            const cart = soundBank[p][c];
-            if(cart.fileName === file.name && !cart.audioUrl) {
-              cart.audioUrl = URL.createObjectURL(file);
-              const arr = await file.arrayBuffer(); const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
-              try {
-                  const buffer = await tempCtx.decodeAudioData(arr); cart.duration = buffer.duration;
-                  const data = buffer.getChannelData(0); const numPoints = 1000; const step = Math.ceil(data.length / numPoints);
-                  const peaks = new Float32Array(numPoints);
-                  for (let i = 0; i < numPoints; i++) {
-                      let max = 0; for (let j = 0; j < step; j++) { const val = Math.abs(data[(i * step) + j]); if (val > max) max = val; }
-                      peaks[i] = max;
-                  }
-                  cart.peakData = [peaks];
-              } catch(e) {}
-            }
-          }
+      for(let f of files) for(let p=0; p<soundBank.length; p++) for(let c=0; c<soundBank[p].length; c++) {
+        const cart = soundBank[p][c];
+        if(cart.fileName === f.name && !cart.audioUrl) {
+          cart.audioUrl = URL.createObjectURL(f);
+          const arr = await f.arrayBuffer(); const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+          try {
+              const buffer = await tempCtx.decodeAudioData(arr); cart.duration = buffer.duration;
+              if(!cart.outPoint) cart.outPoint = buffer.duration;
+              cart.peakData = await generatePeaksForBuffer(buffer);
+          } catch(err) {}
         }
       }
       renderGrid(); checkOfflineStatus();
     }
 
-    function toggleEditMode(isActive) {
-      isEditModeActive = isActive; const wrapper = document.getElementById('workspaceWrapper');
-      if(isActive) wrapper.classList.add('edit-mode-active'); else wrapper.classList.remove('edit-mode-active');
-      if(!isActive) saveCurrentShowState(); 
-    }
-
-    function openSettingsModal(idx) {
-      currentlyEditingPadIdx = idx; const cart = soundBank[currentPage][idx];
-      document.getElementById('settingsModalTitle').innerText = `Edit: ${cart.title}`;
-      document.getElementById('editPadTitle').value = cart.title; document.getElementById('editPadColor').value = cart.color;
-      document.getElementById('padSettingsModal').style.display = 'flex';
-    }
-
+    function toggleEditMode(isActive) { isEditModeActive = isActive; const wrapper = document.getElementById('workspaceWrapper'); if(isActive) wrapper.classList.add('edit-mode-active'); else wrapper.classList.remove('edit-mode-active'); if(!isActive) saveCurrentShowState(); }
+    function openSettingsModal(idx) { currentlyEditingPadIdx = idx; const c = soundBank[currentPage][idx]; document.getElementById('settingsModalTitle').innerText = `Edit: ${c.title}`; document.getElementById('editPadTitle').value = c.title; document.getElementById('editPadColor').value = c.color; document.getElementById('padSettingsModal').style.display = 'flex'; }
     function closeSettingsModal() { document.getElementById('padSettingsModal').style.display = 'none'; }
-    function saveSettingsModal() {
-      if(currentlyEditingPadIdx === null) return;
-      const cart = soundBank[currentPage][currentlyEditingPadIdx];
-      cart.title = document.getElementById('editPadTitle').value; cart.color = document.getElementById('editPadColor').value;
-      closeSettingsModal(); renderGrid(); updateInspector();
-    }
+    function saveSettingsModal() { if(currentlyEditingPadIdx === null) return; const c = soundBank[currentPage][currentlyEditingPadIdx]; c.title = document.getElementById('editPadTitle').value; c.color = document.getElementById('editPadColor').value; closeSettingsModal(); renderGrid(); updateInspector(); }
 
     function renderGrid() {
       const container = document.getElementById('cartContainer'); container.innerHTML = '';
       soundBank[currentPage].forEach((cart, i) => {
         const isBlank = cart.fileName === 'Empty'; const isOffline = !isBlank && !cart.audioUrl;
-        let cartClasses = `cart`; if (selectedCartIdx === i) cartClasses += ` selected`; if (isBlank) cartClasses += ` is-empty`; if (isOffline) cartClasses += ` is-offline`;
-        const div = document.createElement('div'); div.className = cartClasses; div.id = `cart-wrap-${cart.id}`; 
-        
-        let triggerText = cart.isPlaying ? 'STOP' : (cart.audioUrl ? 'PLAY' : (isOffline ? 'OFFLINE' : 'EMPTY'));
-        let bodyStyle = (!isBlank && !isOffline) ? `background: ${cart.color}; box-shadow: inset 0 2px 10px rgba(255,255,255,0.2), inset 0 -4px 10px rgba(0,0,0,0.3);` : '';
-
-        div.innerHTML = `
-          <div class="progress-bar" id="pb-${cart.id}"></div>
-          <div class="cart-header">
-            <span style="font-size:0.75rem; font-weight:bold; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cart.title}</span>
-            <div style="width:12px;height:12px;border-radius:50%;background:${cart.color};flex-shrink:0;"></div>
-          </div>
-          <div class="cart-body ${cart.isPlaying ? 'playing' : ''}" id="cart-body-${cart.id}" style="${bodyStyle}">
-            <div class="cart-file-label">${cart.fileName}</div><div>${triggerText}</div>
-            <div class="cart-timer" id="tmr-${cart.id}">${cart.audioUrl && !cart.isPlaying ? fmtTime(cart.duration) : ''}</div>
-          </div>
-        `;
-        const cartBody = div.querySelector('.cart-body');
-        cartBody.addEventListener('touchstart', (e) => { e.preventDefault(); div.classList.add('phys-press'); if(selectedCartIdx !== i) selectCart(i); handlePlay(e, i); }, { passive: false });
-        div.addEventListener('touchend', () => div.classList.remove('phys-press'));
+        let cClass = `cart`; if (selectedCartIdx === i) cClass += ` selected`; if (isBlank) cClass += ` is-empty`; if (isOffline) cClass += ` is-offline`;
+        const div = document.createElement('div'); div.className = cClass; div.id = `cart-wrap-${cart.id}`; 
+        let tTxt = cart.isPlaying ? 'STOP' : (cart.audioUrl ? 'PLAY' : (isOffline ? 'OFFLINE' : 'EMPTY'));
+        let bStyle = (!isBlank && !isOffline) ? `background: ${cart.color}; box-shadow: inset 0 2px 10px rgba(255,255,255,0.2), inset 0 -4px 10px rgba(0,0,0,0.3);` : '';
+        const playLen = cart.audioUrl ? ((cart.outPoint || cart.duration) - (cart.inPoint || 0)) : 0;
+        div.innerHTML = `<div class="progress-bar" id="pb-${cart.id}"></div><div class="cart-header"><span style="font-size:0.75rem; font-weight:bold; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cart.title}</span><div style="width:12px;height:12px;border-radius:50%;background:${cart.color};flex-shrink:0;"></div></div><div class="cart-body ${cart.isPlaying ? 'playing' : ''}" id="cart-body-${cart.id}" style="${bStyle}"><div class="cart-file-label">${cart.fileName}</div><div>${tTxt}</div><div class="cart-timer" id="tmr-${cart.id}">${cart.audioUrl && !cart.isPlaying ? fmtTime(playLen) : ''}</div></div>`;
+        const cb = div.querySelector('.cart-body'); cb.addEventListener('touchstart', (e) => { e.preventDefault(); div.classList.add('phys-press'); if(selectedCartIdx !== i) selectCart(i); handlePlay(e, i); }, { passive: false }); div.addEventListener('touchend', () => div.classList.remove('phys-press'));
         container.appendChild(div);
       });
     }
 
-    async function handlePlay(e, idx) {
-      e.stopPropagation(); 
-      if(isEditModeActive) { openSettingsModal(idx); return; }
-      const cart = soundBank[currentPage][idx]; if(!cart.audioUrl) return; 
-      if(audioCtx.state === 'suspended') await audioCtx.resume();
-      if(cart.isPlaying) stopCart(cart.id); else playCart(cart);
-    }
+    async function handlePlay(e, idx) { e.stopPropagation(); if(isEditModeActive) { openSettingsModal(idx); return; } const cart = soundBank[currentPage][idx]; if(!cart.audioUrl) return; if(audioCtx.state === 'suspended') await audioCtx.resume(); if(cart.isPlaying) stopCart(cart.id); else playCart(cart); }
 
     function playCart(cart) {
       if(document.getElementById('exclusiveToggle').checked) stopAllAudio();
-      const audioEl = new Audio(cart.audioUrl); const source = audioCtx.createMediaElementSource(audioEl); const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
-      source.connect(analyser); analyser.connect(masterGain); 
-      audioEl.currentTime = cart.cuePoint || 0; audioEl.play(); cart.isPlaying = true;
-      activeSources.push({ id: cart.id, source: audioEl, mediaElementNode: source, totalDur: cart.duration, analyser: analyser, dataArray: new Uint8Array(analyser.frequencyBinCount), color: cart.color });
+      const audioEl = new Audio(cart.audioUrl); const source = audioCtx.createMediaElementSource(audioEl);
+      const cartGain = audioCtx.createGain(); cartGain.gain.value = cart.gain || 1.0;
+      const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
+      source.connect(cartGain); cartGain.connect(analyser); analyser.connect(masterGain); 
+      
+      audioEl.currentTime = cart.inPoint || 0; 
+      audioEl.play(); cart.isPlaying = true;
+
+      const checkOutPoint = () => { if (cart.outPoint && audioEl.currentTime >= cart.outPoint) { stopCart(cart.id); audioEl.removeEventListener('timeupdate', checkOutPoint); } };
+      audioEl.addEventListener('timeupdate', checkOutPoint);
+
+      const playLen = (cart.outPoint || cart.duration) - (cart.inPoint || 0);
+      activeSources.push({ id: cart.id, source: audioEl, mediaElementNode: source, gainNode: cartGain, startOffset: cart.inPoint || 0, playLen: playLen, analyser: analyser, dataArray: new Uint8Array(analyser.frequencyBinCount), color: cart.color, outCheck: checkOutPoint });
       audioEl.onended = () => { stopCart(cart.id); }; renderGrid();
     }
 
     function stopCart(id) { 
-        const record = activeSources.find(s => s.id === id); 
-        if(record) {
-            try { record.source.pause(); record.source.currentTime = 0; record.mediaElementNode.disconnect(); } catch(e){}
-            const cart = soundBank.flat().find(c => c.id === id); if(cart) cart.isPlaying = false;
+        const r = activeSources.find(s => s.id === id); 
+        if(r) {
+            try { r.source.removeEventListener('timeupdate', r.outCheck); r.source.pause(); r.source.currentTime = 0; r.mediaElementNode.disconnect(); r.gainNode.disconnect(); } catch(e){}
+            const c = soundBank.flat().find(c => c.id === id); if(c) c.isPlaying = false;
             activeSources = activeSources.filter(s => s.id !== id); renderGrid();
         } 
     }
     
     function stopAllAudio() { activeSources.forEach(s => stopCart(s.id)); editorStop(); }
 
-    document.getElementById('assetBrowserInput').onchange = (e) => {
-      const files = Array.from(e.target.files);
-      const audioFiles = files.filter(f => f.type.startsWith('audio/') || f.name.toLowerCase().endsWith('.wav') || f.name.toLowerCase().endsWith('.mp3') || f.name.toLowerCase().endsWith('.m4a') || f.name.toLowerCase().endsWith('.aiff') || f.name.toLowerCase().endsWith('.aif'));
-      browserFiles = [...browserFiles, ...audioFiles]; renderBrowserList();
-    };
-
+    document.getElementById('assetBrowserInput').onchange = (e) => { const files = Array.from(e.target.files).filter(f => f.type.startsWith('audio/') || f.name.toLowerCase().match(/\.(wav|mp3|m4a|aif|aiff)$/)); browserFiles = [...browserFiles, ...files]; renderBrowserList(); };
     function renderBrowserList() {
       const list = document.getElementById('browserFileList'); list.innerHTML = ''; if(browserFiles.length === 0) return;
-      browserFiles.forEach((file) => {
-        const item = document.createElement('div'); item.className = 'browser-item'; 
-        item.onclick = () => {
-            if(!isEditModeActive) { alert("Please turn on EDIT MODE to assign files to pads."); return; }
-            if(selectedCartIdx !== null) loadFile(file, selectedCartIdx); else alert("Please select a cart first.");
-        };
-        item.innerHTML = `<span class="browser-filename">${file.name}</span><button style="background:none;border:none;color:var(--accent);font-weight:bold;">ASSIGN</button>`;
-        list.appendChild(item);
-      });
+      browserFiles.forEach(f => { const item = document.createElement('div'); item.className = 'browser-item'; item.onclick = () => { if(!isEditModeActive) { alert("Turn on EDIT MODE to assign files to pads."); return; } if(selectedCartIdx !== null) loadFile(f, selectedCartIdx); else alert("Select a cart first."); }; item.innerHTML = `<span class="browser-filename">${f.name}</span><button style="background:none;border:none;color:var(--accent);font-weight:bold;">ASSIGN</button>`; list.appendChild(item); });
     }
 
     async function loadFile(file, idx) {
-      if(!file) return;
-      const url = URL.createObjectURL(file); const cart = soundBank[currentPage][idx]; cart.audioUrl = url; cart.fileName = file.name; 
+      if(!file) return; const url = URL.createObjectURL(file); const cart = soundBank[currentPage][idx]; cart.audioUrl = url; cart.fileName = file.name; 
       const tempAudio = new Audio(url);
       tempAudio.onloadedmetadata = async () => {
-          cart.duration = tempAudio.duration; cart.peakData = await generatePeaksLocally(file);
+          cart.duration = tempAudio.duration; if(!cart.outPoint || cart.outPoint > cart.duration) cart.outPoint = cart.duration;
+          
+          // Generate peaks
+          const arr = await file.arrayBuffer();
+          const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+          try {
+              const buffer = await tempCtx.decodeAudioData(arr);
+              cart.peakData = await generatePeaksForBuffer(buffer, 1000);
+          } catch(e) { cart.peakData = [new Float32Array(1000)]; }
+
           renderGrid(); checkOfflineStatus(); if (idx === selectedCartIdx) { requestAnimationFrame(() => { resizeAllCanvases(); drawWaveform(); }); }
       };
     }
 
-    async function generatePeaksLocally(file) {
-        const arr = await file.arrayBuffer(); const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
-        try {
-            const buffer = await tempCtx.decodeAudioData(arr);
-            const data = buffer.getChannelData(0); const numPoints = 1000; const step = Math.ceil(data.length / numPoints); const peaks = new Float32Array(numPoints);
-            for (let i = 0; i < numPoints; i++) { let max = 0; for (let j = 0; j < step; j++) { const val = Math.abs(data[(i * step) + j]); if (val > max) max = val; } peaks[i] = max; } return [peaks];
-        } catch (e) { return [new Float32Array(1000)]; }
+    // MULTI-CHANNEL PEAK GENERATOR
+    async function generatePeaksForBuffer(buffer, numPoints = 2000) {
+        const numChannels = buffer.numberOfChannels;
+        const allPeaks = [];
+        for (let c = 0; c < numChannels; c++) {
+            const data = buffer.getChannelData(c);
+            const step = Math.ceil(data.length / numPoints);
+            const peaks = new Float32Array(numPoints);
+            for (let i = 0; i < numPoints; i++) {
+                let max = 0;
+                for (let j = 0; j < step; j++) {
+                    const val = Math.abs(data[(i * step) + j]);
+                    if (val > max) max = val;
+                }
+                peaks[i] = max;
+            }
+            allPeaks.push(peaks);
+        }
+        return allPeaks;
     }
 
     function switchPage(p) { currentPage = p; selectedCartIdx = null; updateInspector(); document.querySelectorAll('.page-btn').forEach((b, i) => b.classList.toggle('active', i === p)); renderGrid(); }
-    function selectCart(idx) { selectedCartIdx = idx; renderGrid(); updateInspector(); document.getElementById('scrollSlider').disabled = zoomFactor === 1; drawWaveform(); }
+    function selectCart(idx) { selectedCartIdx = idx; renderGrid(); updateInspector(); drawWaveform(); }
     function updateInspector() {
       if(selectedCartIdx === null) { document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...'; drawWaveform(); return; }
-      const cart = soundBank[currentPage][selectedCartIdx];
-      document.getElementById('inspectorDetail').innerHTML = `<b style="color:${cart.color}; font-size:1.1rem;">${cart.title}</b><br><span style="font-size:0.75rem; color:var(--text-dim);">${cart.fileName}</span>`;
+      const c = soundBank[currentPage][selectedCartIdx]; document.getElementById('inspectorDetail').innerHTML = `<b style="color:${c.color}; font-size:1.1rem;">${c.title}</b><br><span style="font-size:0.75rem; color:var(--text-dim);">${c.fileName}</span>`;
     }
 
     function fmtTime(s) { if(isNaN(s) || s < 0) s = 0; const m = Math.floor(s / 60); const sec = Math.floor(s % 60).toString().padStart(2, '0'); const ms = Math.floor((s % 1) * 10); return `${m}:${sec}.${ms}`; }
     function hexToRgb(hex) { let c = hex.substring(1).split(''); if(c.length == 3){ c = [c[0], c[0], c[1], c[1], c[2], c[2]]; } c = '0x' + c.join(''); return [(c>>16)&255, (c>>8)&255, c&255].join(','); }
     function forceCanvasDimensions(canvasId, wrapperId) { const canvas = document.getElementById(canvasId); const wrapper = document.getElementById(wrapperId); if (wrapper && wrapper.offsetWidth > 0) { canvas.width = wrapper.offsetWidth; canvas.height = wrapper.offsetHeight; } }
     function resizeAllCanvases() { forceCanvasDimensions('waveformCanvas', 'waveformWrapper'); forceCanvasDimensions('editorCanvas', 'editorWaveWrapper'); }
-    window.addEventListener('resize', () => { resizeAllCanvases(); drawWaveform(); drawEditor(); });
+    window.addEventListener('resize', () => { resizeAllCanvases(); drawWaveform(); drawEditor(); updateEditorVisuals(); });
 
+    // MULTI-CHANNEL CANVAS RENDERER: INSPECTOR
     function drawWaveform() {
-      forceCanvasDimensions('waveformCanvas', 'waveformWrapper');
-      const canvas = document.getElementById('waveformCanvas'); const ctx = canvas.getContext('2d'); if (canvas.width === 0 || canvas.height === 0) return; ctx.clearRect(0,0,canvas.width, canvas.height);
+      forceCanvasDimensions('waveformCanvas', 'waveformWrapper'); const canvas = document.getElementById('waveformCanvas'); const ctx = canvas.getContext('2d'); if (canvas.width === 0 || canvas.height === 0) return; ctx.clearRect(0,0,canvas.width, canvas.height);
       if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; if(!cart || !cart.peakData || !cart.peakData.length) { document.getElementById('cueMarker').style.display = 'none'; return; }
+      
       const duration = cart.duration || 1; const winSize = duration / zoomFactor; const start = (duration - winSize) * (scrollPos / 100);
-      const channelPeaks = cart.peakData[0]; const numPoints = channelPeaks.length; const trackHeight = canvas.height; const amp = trackHeight / 2; ctx.fillStyle = cart.color;
-      for (let i = 0; i < canvas.width; i++) {
-          const timeAtPixel = start + (i / canvas.width) * winSize; const peakIdx = Math.floor((timeAtPixel / duration) * numPoints);
-          if (peakIdx >= 0 && peakIdx < numPoints) { const peak = channelPeaks[peakIdx]; const h = Math.max(1, peak * trackHeight); ctx.fillRect(i, amp - (h / 2), 1, h); }
+      const numChannels = cart.peakData.length; const trackHeight = canvas.height / numChannels;
+      ctx.fillStyle = cart.color;
+
+      for (let c = 0; c < numChannels; c++) {
+          const channelPeaks = cart.peakData[c]; const numPoints = channelPeaks.length; const amp = trackHeight / 2; const yOffset = c * trackHeight;
+          for (let i = 0; i < canvas.width; i++) {
+              const timeAtPixel = start + (i / canvas.width) * winSize; const peakIdx = Math.floor((timeAtPixel / duration) * numPoints);
+              if (peakIdx >= 0 && peakIdx < numPoints) { const h = Math.max(1, channelPeaks[peakIdx] * trackHeight); ctx.fillRect(i, yOffset + amp - (h / 2), 1, h); }
+          }
       }
-      const cuePos = ((cart.cuePoint - start) / winSize) * canvas.width; document.getElementById('cueMarker').style.left = `${cuePos}px`; document.getElementById('cueMarker').style.display = (cuePos >= 0 && cuePos <= canvas.width) ? 'block' : 'none';
+      const cuePos = ((cart.inPoint || 0) - start) / winSize * canvas.width; document.getElementById('cueMarker').style.left = `${cuePos}px`; document.getElementById('cueMarker').style.display = (cuePos >= 0 && cuePos <= canvas.width) ? 'block' : 'none';
     }
 
     function startAnimLoop() {
       function frame() {
         let cueWindowActive = false; const wfCanvas = document.getElementById('waveformCanvas');
         activeSources.forEach(s => {
-          const curTime = s.source.currentTime; const pct = (curTime / s.totalDur) * 100;
+          const curTime = s.source.currentTime; const relTime = curTime - s.startOffset; const pct = Math.max(0, Math.min(100, (relTime / s.playLen) * 100));
           const bar = document.getElementById(`pb-${s.id}`); if(bar) bar.style.width = `${pct}%`;
-          const tmr = document.getElementById(`tmr-${s.id}`); if(tmr) tmr.innerText = "-" + fmtTime(s.totalDur - curTime);
-          s.analyser.getByteTimeDomainData(s.dataArray); let sumSquares = 0;
-          for(let i=0; i < s.dataArray.length; i++) { const norm = (s.dataArray[i] / 128.0) - 1.0; sumSquares += norm * norm; }
-          const rms = Math.sqrt(sumSquares / s.dataArray.length); const intensity = Math.min(1.5, rms * 5); 
+          const tmr = document.getElementById(`tmr-${s.id}`); if(tmr) tmr.innerText = "-" + fmtTime(s.playLen - relTime);
+          s.analyser.getByteTimeDomainData(s.dataArray); let sumSquares = 0; for(let i=0; i < s.dataArray.length; i++) { const norm = (s.dataArray[i] / 128.0) - 1.0; sumSquares += norm * norm; } const rms = Math.sqrt(sumSquares / s.dataArray.length); const intensity = Math.min(1.5, rms * 5); 
           const wrapNode = document.getElementById(`cart-wrap-${s.id}`); const bodyNode = document.getElementById(`cart-body-${s.id}`);
-          if (bodyNode && wrapNode) {
-              const rgb = hexToRgb(s.color || '#ff0055'); bodyNode.style.filter = `brightness(${0.4 + (intensity * 1.5)}) saturate(${1 + intensity})`;
-              wrapNode.style.boxShadow = `0 5px 0 #070709, 0 6px 10px rgba(0,0,0,0.6), 0 0 ${20 + (intensity * 80)}px rgba(${rgb}, ${intensity * 0.8})`;
-          }
-          if(selectedCartIdx !== null) {
-            const current = soundBank[currentPage][selectedCartIdx];
-            if(current.id === s.id) {
-              cueWindowActive = true; const head = document.getElementById('matrixLivePlayhead'); 
-              const winSize = current.duration / zoomFactor; const start = (current.duration - winSize) * (scrollPos / 100);
-              const playPx = ((curTime - start) / winSize) * wfCanvas.width; head.style.left = `${playPx}px`; head.style.display = (playPx >= 0 && playPx <= wfCanvas.width) ? 'block' : 'none';
-            }
-          }
+          if (bodyNode && wrapNode) { const rgb = hexToRgb(s.color || '#ff0055'); bodyNode.style.filter = `brightness(${0.4 + (intensity * 1.5)}) saturate(${1 + intensity})`; wrapNode.style.boxShadow = `0 5px 0 #070709, 0 6px 10px rgba(0,0,0,0.6), 0 0 ${20 + (intensity * 80)}px rgba(${rgb}, ${intensity * 0.8})`; }
+          if(selectedCartIdx !== null) { const current = soundBank[currentPage][selectedCartIdx]; if(current.id === s.id) { cueWindowActive = true; const head = document.getElementById('matrixLivePlayhead'); const winSize = current.duration / zoomFactor; const start = (current.duration - winSize) * (scrollPos / 100); const playPx = ((curTime - start) / winSize) * wfCanvas.width; head.style.left = `${playPx}px`; head.style.display = (playPx >= 0 && playPx <= wfCanvas.width) ? 'block' : 'none'; } }
         });
         if(!cueWindowActive) { document.getElementById('matrixLivePlayhead').style.display = 'none'; }
+        
+        if(editorPlayNode && audioCtx.state === 'running' && editorBuffer) {
+            const elaps = audioCtx.currentTime - editorPlayNode.startTime; const curT = (document.getElementById('edInSlider').value || 0) * 1 + elaps;
+            if(curT >= document.getElementById('edOutSlider').value) { editorStop(); }
+            else { const h = document.getElementById('editorPlayhead'); const px = (curT / editorBuffer.duration) * document.getElementById('editorCanvas').width; h.style.left = `${px}px`; h.style.display = 'block'; }
+        } else { document.getElementById('editorPlayhead').style.display = 'none'; }
         requestAnimationFrame(frame);
       }
       frame();
     }
 
-    document.getElementById('waveformWrapper').addEventListener('touchstart', (e) => {
-      e.preventDefault(); if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; if(!cart || !cart.audioUrl) return;
-      const rect = e.currentTarget.getBoundingClientRect(); const pct = (e.touches[0].clientX - rect.left) / rect.width;
-      const winSize = cart.duration / zoomFactor; const start = (cart.duration - winSize) * (scrollPos / 100); cart.cuePoint = start + (pct * winSize); drawWaveform();
-    }, { passive: false });
-
-    document.getElementById('zoomSlider').oninput = e => { zoomFactor = parseFloat(e.target.value); document.getElementById('zoomVal').textContent = zoomFactor + 'x'; document.getElementById('scrollSlider').disabled = zoomFactor === 1; drawWaveform(); };
-    document.getElementById('scrollSlider').oninput = e => { scrollPos = parseInt(e.target.value); drawWaveform(); };
-
-    async function loadEditorFile(file) {
-        if(!file) return; const arr = await file.arrayBuffer(); editorBuffer = await audioCtx.decodeAudioData(arr); editorPeaks = await generateEditorPeaks(editorBuffer);
-        document.getElementById('editorMetrics').innerText = `Duration: ${fmtTime(editorBuffer.duration)}`; drawEditor();
-    }
-
-    async function generateEditorPeaks(buffer) {
-        const data = buffer.getChannelData(0); const numPoints = 2000; const step = Math.ceil(data.length / numPoints); const peaks = new Float32Array(numPoints);
-        for (let i = 0; i < numPoints; i++) { let max = 0; for (let j = 0; j < step; j++) { const val = Math.abs(data[(i * step) + j]); if (val > max) max = val; } peaks[i] = max; } return peaks;
-    }
-
-    function drawEditor() {
-        forceCanvasDimensions('editorCanvas', 'editorWaveWrapper'); const canvas = document.getElementById('editorCanvas'); const ctx = canvas.getContext('2d');
-        if (!editorPeaks || canvas.width === 0) return; ctx.clearRect(0,0,canvas.width, canvas.height);
-        const numPoints = editorPeaks.length; const amp = canvas.height / 2; ctx.fillStyle = '#00f2ff';
-        for (let i = 0; i < canvas.width; i++) { const peakIdx = Math.floor((i / canvas.width) * numPoints); if (peakIdx < numPoints) { const h = Math.max(1, editorPeaks[peakIdx] * canvas.height); ctx.fillRect(i, amp - (h / 2), 1, h); } }
-    }
-
-    function editorPlay() { if(!editorBuffer) return; editorStop(); editorPlayNode = audioCtx.createBufferSource(); editorPlayNode.buffer = editorBuffer; editorPlayNode.connect(masterGain); editorPlayNode.start(); }
-    function editorStop() { if(editorPlayNode) { try { editorPlayNode.stop(); } catch(e){} editorPlayNode.disconnect(); editorPlayNode = null; } }
-    document.getElementById('editorLoadFileInput').onchange = (e) => loadEditorFile(e.target.files[0]);
-
     function sendActiveToEditor() {
         if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; if(!cart.audioUrl) return;
+        currentEditorPad = cart;
         fetch(cart.audioUrl).then(r => r.blob()).then(blob => { loadEditorFile(new File([blob], cart.fileName, {type: blob.type})); switchView('editor'); });
     }
+
+    async function loadEditorFile(file) {
+        if(!file) return; const arr = await file.arrayBuffer(); editorBuffer = await audioCtx.decodeAudioData(arr);
+        
+        const pIn = currentEditorPad && currentEditorPad.inPoint ? currentEditorPad.inPoint : 0;
+        const pOut = currentEditorPad && currentEditorPad.outPoint ? currentEditorPad.outPoint : editorBuffer.duration;
+        const pGain = currentEditorPad && currentEditorPad.gain ? currentEditorPad.gain : 1.0;
+        
+        const slIn = document.getElementById('edInSlider'); const slOut = document.getElementById('edOutSlider'); const slG = document.getElementById('edGainSlider');
+        slIn.max = editorBuffer.duration; slOut.max = editorBuffer.duration;
+        slIn.value = pIn; slOut.value = pOut; slG.value = pGain;
+        
+        editorPeaks = await generatePeaksForBuffer(editorBuffer, 2000);
+        document.getElementById('editorMetrics').innerText = `Source File: ${fmtTime(editorBuffer.duration)} | Selected: ${fmtTime(pOut - pIn)}`;
+        drawEditor(); updateEditorVisuals();
+    }
+
+    function updateEditorVisuals() {
+        if(!editorBuffer) return;
+        let vIn = parseFloat(document.getElementById('edInSlider').value); let vOut = parseFloat(document.getElementById('edOutSlider').value);
+        if(vIn >= vOut) { vIn = vOut - 0.01; document.getElementById('edInSlider').value = vIn; }
+        
+        document.getElementById('edInLabel').innerText = vIn.toFixed(2) + "s";
+        document.getElementById('edOutLabel').innerText = vOut.toFixed(2) + "s";
+        document.getElementById('edGainLabel').innerText = parseFloat(document.getElementById('edGainSlider').value).toFixed(1) + "x";
+        document.getElementById('editorMetrics').innerText = `Source File: ${fmtTime(editorBuffer.duration)} | Selected Length: ${fmtTime(vOut - vIn)}`;
+        
+        const pctIn = (vIn / editorBuffer.duration) * 100; const pctOut = 100 - ((vOut / editorBuffer.duration) * 100);
+        document.getElementById('editorDimLeft').style.width = `${pctIn}%`; document.getElementById('editorDimRight').style.width = `${pctOut}%`;
+    }
+
+    // MULTI-CHANNEL CANVAS RENDERER: EDITOR
+    function drawEditor() {
+        forceCanvasDimensions('editorCanvas', 'editorWaveWrapper'); const canvas = document.getElementById('editorCanvas'); const ctx = canvas.getContext('2d');
+        if (!editorPeaks || !editorPeaks.length || canvas.width === 0) return; ctx.clearRect(0,0,canvas.width, canvas.height);
+        
+        const numChannels = editorPeaks.length; const trackHeight = canvas.height / numChannels; ctx.fillStyle = '#00f2ff';
+        
+        for (let c = 0; c < numChannels; c++) {
+            const channelPeaks = editorPeaks[c]; const numPoints = channelPeaks.length; const amp = trackHeight / 2; const yOffset = c * trackHeight;
+            for (let i = 0; i < canvas.width; i++) {
+                const peakIdx = Math.floor((i / canvas.width) * numPoints);
+                if (peakIdx < numPoints) { const h = Math.max(1, channelPeaks[peakIdx] * trackHeight); ctx.fillRect(i, yOffset + amp - (h / 2), 1, h); }
+            }
+        }
+    }
+
+    function editorPlay() {
+        if(!editorBuffer) return; editorStop();
+        editorPlayNode = audioCtx.createBufferSource(); editorPlayNode.buffer = editorBuffer;
+        editorGainNode = audioCtx.createGain(); editorGainNode.gain.value = parseFloat(document.getElementById('edGainSlider').value);
+        editorPlayNode.connect(editorGainNode); editorGainNode.connect(masterGain);
+        
+        const st = parseFloat(document.getElementById('edInSlider').value); const en = parseFloat(document.getElementById('edOutSlider').value);
+        editorPlayNode.startTime = audioCtx.currentTime; editorPlayNode.start(0, st, en - st);
+    }
+
+    function editorStop() { if(editorPlayNode) { try { editorPlayNode.stop(); } catch(e){} editorPlayNode.disconnect(); if(editorGainNode) editorGainNode.disconnect(); editorPlayNode = null; } }
+
+    function saveEditorToPad() {
+        if(!currentEditorPad || selectedCartIdx === null) { alert("No pad selected to save to."); return; }
+        currentEditorPad.inPoint = parseFloat(document.getElementById('edInSlider').value);
+        currentEditorPad.outPoint = parseFloat(document.getElementById('edOutSlider').value);
+        currentEditorPad.gain = parseFloat(document.getElementById('edGainSlider').value);
+        saveCurrentShowState(); renderGrid(); switchView('matrix');
+    }
+
   </script>
 </body>
 </html>
