@@ -56,7 +56,6 @@
     .cart.is-offline .cart-body { background: rgba(252, 163, 17, 0.1) !important; color: var(--warning) !important; box-shadow: none !important; text-shadow: none; }
     .cart.selected { border: 2px solid var(--accent); }
     
-    /* V6 Fix: Logic Pad Styling & Flashing */
     .cart.is-modifier { border: 2px dashed #444; background: #0a0a0c; box-shadow: none; }
     .cart.is-modifier .cart-header { background: #0a0a0c; border-bottom: 1px dashed rgba(255,255,255,0.1); }
     .cart.is-modifier .cart-body { background: transparent !important; box-shadow: none !important; color: var(--warning); text-shadow: none; }
@@ -165,7 +164,9 @@
           <button id="relinkBtn" class="header-btn" style="display:none; color: var(--warning); border-color: var(--warning);" onclick="document.getElementById('relinkInput').click()">🔄 RE-LINK AUDIO</button>
           <label class="edit-toggle-container"><input type="checkbox" id="editModeToggle" onchange="toggleEditMode(this.checked)"> EDIT MODE</label>
           <button class="header-btn" onclick="document.getElementById('assetBrowserInput').click()" style="color: var(--accent); border-color: var(--accent);">📂 IMPORT</button>
-          <button class="header-btn" onclick="saveAndReturnToLobby()">💾 SAVE / LOBBY</button>
+          
+          <button class="header-btn" onclick="saveAs()">💾 SAVE AS</button>
+          <button class="header-btn" onclick="saveAndReturnToLobby()">🏠 LOBBY</button>
       </div>
       <button class="stop-all-global" onclick="stopAllAudio()">🛑 STOP ALL AUDIO</button>
     </header>
@@ -232,18 +233,30 @@
               <div id="editorPlayhead" class="play-line" style="background: white; z-index: 5; display: none;"></div>
             </div>
             
-            <div style="display: flex; gap: 20px; background: var(--panel); padding: 15px; border-radius: var(--radius); border: 1px solid #2d2d35;">
-                <div class="form-group" style="flex: 2;">
-                    <div style="display: flex; justify-content: space-between;"><label>IN POINT</label><span id="edInLabel" style="font-size:0.75rem; color:var(--accent);">0.00s</span></div>
-                    <input type="range" id="edInSlider" min="0" max="100" value="0" step="0.01" oninput="updateEditorVisuals()">
+            <div style="display: flex; flex-direction: column; gap: 10px; background: var(--panel); padding: 15px; border-radius: var(--radius); border: 1px solid #2d2d35;">
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;"><label>IN POINT</label><span id="edInLabel" style="font-size:0.75rem; color:var(--accent);">0.00s</span></div>
+                        <input type="range" id="edInSlider" min="0" max="100" value="0" step="0.01" oninput="updateEditorVisuals()">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;"><label>OUT POINT</label><span id="edOutLabel" style="font-size:0.75rem; color:var(--accent);">0.00s</span></div>
+                        <input type="range" id="edOutSlider" min="0" max="100" value="100" step="0.01" oninput="updateEditorVisuals()">
+                    </div>
                 </div>
-                <div class="form-group" style="flex: 2;">
-                    <div style="display: flex; justify-content: space-between;"><label>OUT POINT</label><span id="edOutLabel" style="font-size:0.75rem; color:var(--accent);">0.00s</span></div>
-                    <input type="range" id="edOutSlider" min="0" max="100" value="100" step="0.01" oninput="updateEditorVisuals()">
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between;"><label>GAIN</label><span id="edGainLabel" style="font-size:0.75rem; color:var(--accent);">1.0x</span></div>
-                    <input type="range" id="edGainSlider" min="0" max="3" value="1" step="0.1" oninput="updateEditorVisuals()">
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;"><label>FADE IN</label><span id="edFadeInLabel" style="font-size:0.75rem; color:var(--accent);">0.0s</span></div>
+                        <input type="range" id="edFadeInSlider" min="0" max="5" value="0" step="0.1" oninput="updateEditorVisuals()">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;"><label>FADE OUT</label><span id="edFadeOutLabel" style="font-size:0.75rem; color:var(--accent);">0.0s</span></div>
+                        <input type="range" id="edFadeOutSlider" min="0" max="5" value="0" step="0.1" oninput="updateEditorVisuals()">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;"><label>GAIN</label><span id="edGainLabel" style="font-size:0.75rem; color:var(--accent);">1.0x</span></div>
+                        <input type="range" id="edGainSlider" min="0" max="3" value="1" step="0.1" oninput="updateEditorVisuals()">
+                    </div>
                 </div>
             </div>
             <div id="editorMetrics" style="font-size: 0.8rem; color: var(--text-dim); text-align: center;">Load a file to begin trimming.</div>
@@ -266,7 +279,6 @@
     let currentEditorPad = null;
     let currentShowName = "", gridConfig = { rows: 4, cols: 8 }, isEditModeActive = false, currentlyEditingPadIdx = null;
 
-    // V6 Fix: Global Logic Modifiers
     let globalLoopActive = false;
     let globalCrossfadeActive = false;
 
@@ -297,7 +309,8 @@
     function confirmCreateShow() {
       const name = document.getElementById('newShowName').value || 'Untitled Show'; const r = parseInt(document.getElementById('newShowRows').value) || 4; const c = parseInt(document.getElementById('newShowCols').value) || 8;
       const total = r * c; const banks = [];
-      for(let i=0; i<4; i++) { const bank = []; for(let j=0; j<total; j++) bank.push({ id: `p${i}c${j}`, title: `Slot ${j + 1}`, fileName: 'Empty', color: '#00f2ff', inPoint: 0, outPoint: null, gain: 1.0, padType: 'audio', latched: false }); banks.push(bank); }
+      // V7 Fix: Initialize with fadeIn and fadeOut properties
+      for(let i=0; i<4; i++) { const bank = []; for(let j=0; j<total; j++) bank.push({ id: `p${i}c${j}`, title: `Slot ${j + 1}`, fileName: 'Empty', color: '#00f2ff', inPoint: 0, outPoint: null, fadeIn: 0, fadeOut: 0, gain: 1.0, padType: 'audio', latched: false }); banks.push(bank); }
       localStorage.setItem('ccc_show_' + name.replace(/\s+/g, '_').toLowerCase(), JSON.stringify({ name: name, rows: r, cols: c, banks: banks }));
       cancelCreate(); loadShow('ccc_show_' + name.replace(/\s+/g, '_').toLowerCase());
     }
@@ -309,18 +322,29 @@
       document.getElementById('editModeToggle').checked = false; document.getElementById('workspaceWrapper').classList.remove('edit-mode-active');
       document.querySelectorAll('.page-btn').forEach((b, i) => b.classList.toggle('active', i === 0)); document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...';
       
-      soundBank = data.banks.map(b => b.map(c => ({ ...c, audioUrl: null, peakData: null, duration: 0, isPlaying: false, inPoint: c.inPoint || 0, outPoint: c.outPoint || null, gain: c.gain || 1.0, padType: c.padType || 'audio', latched: false })));
+      soundBank = data.banks.map(b => b.map(c => ({ ...c, audioUrl: null, peakData: null, duration: 0, isPlaying: false, inPoint: c.inPoint || 0, outPoint: c.outPoint || null, fadeIn: c.fadeIn || 0, fadeOut: c.fadeOut || 0, gain: c.gain || 1.0, padType: c.padType || 'audio', latched: false })));
       document.getElementById('activeShowLabel').innerText = `[ ${currentShowName} ]`;
       const cont = document.getElementById('cartContainer'); cont.style.gridTemplateColumns = `repeat(${gridConfig.cols}, 1fr)`; cont.style.gridTemplateRows = `repeat(${gridConfig.rows}, 1fr)`;
       document.getElementById('lobbyScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex';
       resizeAllCanvases(); renderGrid(); checkOfflineStatus();
     }
 
+    // V7 Fix: Save As feature to prevent constant overwriting
+    function saveAs() {
+        const newName = prompt("Save session as:", currentShowName + " Copy");
+        if(newName && newName.trim() !== "") {
+            currentShowName = newName.trim();
+            document.getElementById('activeShowLabel').innerText = `[ ${currentShowName} ]`;
+            saveCurrentShowState();
+            alert("Saved as: " + currentShowName);
+        }
+    }
+
     function saveAndReturnToLobby() { stopAllAudio(); saveCurrentShowState(); document.getElementById('mainApp').style.display = 'none'; document.getElementById('lobbyScreen').style.display = 'flex'; populateLobby(); }
     function saveCurrentShowState() {
       if(!currentShowName) return;
       const safeKey = 'ccc_show_' + currentShowName.replace(/\s+/g, '_').toLowerCase();
-      const serialized = soundBank.map(b => b.map(c => ({ id: c.id, title: c.title, fileName: c.fileName, color: c.color, inPoint: c.inPoint, outPoint: c.outPoint, gain: c.gain, padType: c.padType })));
+      const serialized = soundBank.map(b => b.map(c => ({ id: c.id, title: c.title, fileName: c.fileName, color: c.color, inPoint: c.inPoint, outPoint: c.outPoint, fadeIn: c.fadeIn, fadeOut: c.fadeOut, gain: c.gain, padType: c.padType })));
       localStorage.setItem(safeKey, JSON.stringify({ name: currentShowName, rows: gridConfig.rows, cols: gridConfig.cols, banks: serialized }));
     }
 
@@ -389,10 +413,7 @@
         
         const div = document.createElement('div'); div.className = cClass; div.id = `cart-wrap-${cart.id}`; 
         
-        let triggerText = "EMPTY";
-        let subText = "";
-        let bStyle = "";
-        let pbHTML = "";
+        let triggerText = "EMPTY"; let subText = ""; let bStyle = ""; let pbHTML = "";
 
         if (isModifier) {
             triggerText = cart.padType === 'modifier_loop' ? "🔁 LOOP" : "🔀 CROSSFADE";
@@ -426,18 +447,11 @@
     async function handlePlay(e, idx) { 
       e.stopPropagation(); 
       if(isEditModeActive) { openSettingsModal(idx); return; } 
-      
       const cart = soundBank[currentPage][idx]; 
       
-      // Execute Logic Modifiers
-      if (cart.padType === 'modifier_loop') {
-          cart.latched = !cart.latched; globalLoopActive = cart.latched; renderGrid(); return;
-      }
-      if (cart.padType === 'modifier_crossfade') {
-          cart.latched = !cart.latched; globalCrossfadeActive = cart.latched; renderGrid(); return;
-      }
+      if (cart.padType === 'modifier_loop') { cart.latched = !cart.latched; globalLoopActive = cart.latched; renderGrid(); return; }
+      if (cart.padType === 'modifier_crossfade') { cart.latched = !cart.latched; globalCrossfadeActive = cart.latched; renderGrid(); return; }
       
-      // Standard Audio Play
       if(!cart.audioUrl) return; 
       if(audioCtx.state === 'suspended') await audioCtx.resume(); 
       if(cart.isPlaying) stopCart(cart.id); else playCart(cart); 
@@ -446,8 +460,7 @@
     function crossfadeAllOut() {
         const fadeTime = 1.5;
         activeSources.forEach(s => {
-            if (s.isFading) return; 
-            s.isFading = true;
+            if (s.isFading) return; s.isFading = true;
             s.gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
             s.gainNode.gain.setValueAtTime(s.gainNode.gain.value, audioCtx.currentTime);
             s.gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + fadeTime);
@@ -457,43 +470,71 @@
 
     function playCart(cart) {
       if(document.getElementById('exclusiveToggle').checked) {
-          if (globalCrossfadeActive) crossfadeAllOut();
-          else stopAllAudio();
+          if (globalCrossfadeActive) crossfadeAllOut(); else stopAllAudio();
       }
       
       const audioEl = new Audio(cart.audioUrl); const source = audioCtx.createMediaElementSource(audioEl);
       const cartGain = audioCtx.createGain(); 
+      const now = audioCtx.currentTime;
+      const targetGain = cart.gain || 1.0;
+      const fi = cart.fadeIn || 0;
+      const fo = cart.fadeOut || 0;
+      const playLen = (cart.outPoint || cart.duration) - (cart.inPoint || 0);
       
+      // V7 Fix: Complex Fade Routing
       if (globalCrossfadeActive) {
-          cartGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-          cartGain.gain.linearRampToValueAtTime(cart.gain || 1.0, audioCtx.currentTime + 1.5);
+          cartGain.gain.setValueAtTime(0.001, now);
+          cartGain.gain.linearRampToValueAtTime(targetGain, now + 1.5);
+      } else if (fi > 0) {
+          cartGain.gain.setValueAtTime(0.001, now);
+          cartGain.gain.linearRampToValueAtTime(targetGain, now + fi);
       } else {
-          cartGain.gain.value = cart.gain || 1.0;
+          cartGain.gain.value = targetGain;
+      }
+
+      // Schedule natural Fade Out if not globally looping
+      if (!globalLoopActive && fo > 0 && playLen > fo) {
+          const fadeStart = now + playLen - fo;
+          cartGain.gain.setValueAtTime(targetGain, fadeStart);
+          cartGain.gain.linearRampToValueAtTime(0.001, fadeStart + fo);
       }
       
       const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
       source.connect(cartGain); cartGain.connect(analyser); analyser.connect(masterGain); 
       
       audioEl.currentTime = cart.inPoint || 0; 
-      audioEl.play(); cart.isPlaying = true;
+      audioEl.play().catch(e => console.error(e)); 
+      cart.isPlaying = true;
 
+      // V7 Fix: Re-architected Safari Loop interception
       const checkOutPoint = () => { 
           if (cart.outPoint && audioEl.currentTime >= cart.outPoint) { 
-              if (globalLoopActive) { audioEl.currentTime = cart.inPoint || 0; } // V6 Fix: Loop dynamically catches current playback
-              else { stopCart(cart.id); audioEl.removeEventListener('timeupdate', checkOutPoint); }
+              if (globalLoopActive) { 
+                  audioEl.currentTime = cart.inPoint || 0; 
+                  audioEl.play().catch(e => console.error(e)); 
+              } else { 
+                  stopCart(cart.id); 
+                  audioEl.removeEventListener('timeupdate', checkOutPoint); 
+              }
           } 
       };
+      
+      // Safeguard against Safari aggressively killing files before timeupdate catches it
+      audioEl.onended = () => { 
+          if (globalLoopActive) { audioEl.currentTime = cart.inPoint || 0; audioEl.play().catch(e => console.error(e)); } 
+          else { stopCart(cart.id); }
+      };
+      
       audioEl.addEventListener('timeupdate', checkOutPoint);
 
-      const playLen = (cart.outPoint || cart.duration) - (cart.inPoint || 0);
       activeSources.push({ id: cart.id, source: audioEl, mediaElementNode: source, gainNode: cartGain, startOffset: cart.inPoint || 0, playLen: playLen, analyser: analyser, dataArray: new Uint8Array(analyser.frequencyBinCount), color: cart.color, outCheck: checkOutPoint, isFading: false });
-      audioEl.onended = () => { stopCart(cart.id); }; renderGrid();
+      renderGrid();
     }
 
     function stopCart(id) { 
         const r = activeSources.find(s => s.id === id); 
         if(r) {
-            try { r.source.removeEventListener('timeupdate', r.outCheck); r.source.pause(); r.source.currentTime = 0; r.mediaElementNode.disconnect(); r.gainNode.disconnect(); } catch(e){}
+            try { r.source.removeEventListener('timeupdate', r.outCheck); r.source.pause(); r.source.onended = null; r.source.currentTime = 0; r.mediaElementNode.disconnect(); r.gainNode.disconnect(); } catch(e){}
             const c = soundBank.flat().find(c => c.id === id); if(c) c.isPlaying = false;
             activeSources = activeSources.filter(s => s.id !== id); renderGrid();
         } 
@@ -596,20 +637,14 @@
       frame();
     }
 
-    // V6 Fix: Editor Handoff uses fetch for stable links
     function sendActiveToEditor() {
         if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; 
         if(cart.padType !== 'audio' || !cart.audioUrl) return;
-        
         currentEditorPad = cart;
-        
         fetch(cart.audioUrl).then(r => r.blob()).then(blob => { 
             const f = new File([blob], cart.fileName, {type: blob.type});
-            loadEditorFile(f); 
-            switchView('editor'); 
-        }).catch(err => {
-            alert("Error: Audio file reference was dropped by iOS. Please tap 'Re-Link Audio' first.");
-        });
+            loadEditorFile(f); switchView('editor'); 
+        }).catch(err => { alert("Error: Audio file reference was dropped by iOS. Please tap 'Re-Link Audio' first."); });
     }
 
     async function loadEditorFile(file) {
@@ -617,11 +652,14 @@
         
         const pIn = currentEditorPad && currentEditorPad.inPoint ? currentEditorPad.inPoint : 0;
         const pOut = currentEditorPad && currentEditorPad.outPoint ? currentEditorPad.outPoint : editorBuffer.duration;
+        const pFI = currentEditorPad && currentEditorPad.fadeIn ? currentEditorPad.fadeIn : 0;
+        const pFO = currentEditorPad && currentEditorPad.fadeOut ? currentEditorPad.fadeOut : 0;
         const pGain = currentEditorPad && currentEditorPad.gain ? currentEditorPad.gain : 1.0;
         
-        const slIn = document.getElementById('edInSlider'); const slOut = document.getElementById('edOutSlider'); const slG = document.getElementById('edGainSlider');
+        const slIn = document.getElementById('edInSlider'); const slOut = document.getElementById('edOutSlider'); 
         slIn.max = editorBuffer.duration; slOut.max = editorBuffer.duration;
-        slIn.value = pIn; slOut.value = pOut; slG.value = pGain;
+        slIn.value = pIn; slOut.value = pOut; 
+        document.getElementById('edFadeInSlider').value = pFI; document.getElementById('edFadeOutSlider').value = pFO; document.getElementById('edGainSlider').value = pGain;
         
         editorPeaks = await generatePeaksForBuffer(editorBuffer, 2000);
         document.getElementById('editorMetrics').innerText = `Source File: ${fmtTime(editorBuffer.duration)} | Selected: ${fmtTime(pOut - pIn)}`;
@@ -635,6 +673,8 @@
         
         document.getElementById('edInLabel').innerText = vIn.toFixed(2) + "s";
         document.getElementById('edOutLabel').innerText = vOut.toFixed(2) + "s";
+        document.getElementById('edFadeInLabel').innerText = parseFloat(document.getElementById('edFadeInSlider').value).toFixed(1) + "s";
+        document.getElementById('edFadeOutLabel').innerText = parseFloat(document.getElementById('edFadeOutSlider').value).toFixed(1) + "s";
         document.getElementById('edGainLabel').innerText = parseFloat(document.getElementById('edGainSlider').value).toFixed(1) + "x";
         document.getElementById('editorMetrics').innerText = `Source File: ${fmtTime(editorBuffer.duration)} | Selected Length: ${fmtTime(vOut - vIn)}`;
         
@@ -673,6 +713,8 @@
         if(!currentEditorPad || selectedCartIdx === null) { alert("No pad selected to save to."); return; }
         currentEditorPad.inPoint = parseFloat(document.getElementById('edInSlider').value);
         currentEditorPad.outPoint = parseFloat(document.getElementById('edOutSlider').value);
+        currentEditorPad.fadeIn = parseFloat(document.getElementById('edFadeInSlider').value);
+        currentEditorPad.fadeOut = parseFloat(document.getElementById('edFadeOutSlider').value);
         currentEditorPad.gain = parseFloat(document.getElementById('edGainSlider').value);
         saveCurrentShowState(); renderGrid(); switchView('matrix');
     }
