@@ -48,13 +48,21 @@
     .inspector.is-open { transform: translateX(0); box-shadow: -10px 0 30px rgba(0,0,0,0.8); }
     .inspector-title { color: var(--text-dim); text-transform: uppercase; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; }
 
-    /* Carts */
+    /* Carts & Modifiers */
     .cart { background: #121215; border: 1px solid #2d2d35; border-radius: var(--radius); display: flex; flex-direction: column; position: relative; overflow: visible; box-shadow: 0 5px 0 #070709, 0 6px 10px rgba(0,0,0,0.6); transform: translateY(0); margin-bottom: 5px; min-width: 0; min-height: 0; transition: transform 0.05s cubic-bezier(0.2, 0, 0.2, 1), border-color 0.1s; }
     .cart.phys-press { transform: translateY(5px) !important; box-shadow: 0 0px 0 #070709, 0 1px 2px rgba(0,0,0,0.6) !important; }
     .cart.is-empty { opacity: 0.5; border-style: dashed; box-shadow: none; margin-bottom: 0; transform: none; overflow: hidden; }
     .cart.is-offline { border: 1px solid var(--warning); box-shadow: none; margin-bottom: 0; transform: none; }
     .cart.is-offline .cart-body { background: rgba(252, 163, 17, 0.1) !important; color: var(--warning) !important; box-shadow: none !important; text-shadow: none; }
     .cart.selected { border: 2px solid var(--accent); }
+    
+    /* V6 Fix: Logic Pad Styling & Flashing */
+    .cart.is-modifier { border: 2px dashed #444; background: #0a0a0c; box-shadow: none; }
+    .cart.is-modifier .cart-header { background: #0a0a0c; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+    .cart.is-modifier .cart-body { background: transparent !important; box-shadow: none !important; color: var(--warning); text-shadow: none; }
+    @keyframes flashLogic { 0% { border-color: var(--warning); box-shadow: 0 0 15px var(--warning); background: rgba(252, 163, 17, 0.2); } 50% { border-color: #444; box-shadow: none; background: transparent; } 100% { border-color: var(--warning); box-shadow: 0 0 15px var(--warning); background: rgba(252, 163, 17, 0.2); } }
+    .cart.is-modifier.latched { animation: flashLogic 1s infinite; border-style: solid; }
+
     .cart-header { padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; background: #121215; z-index: 6; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius) var(--radius) 0 0; min-width: 0; }
     .cart-title-input { background: transparent; border: none; color: #fff; font-weight: bold; width: 100%; font-size: 0.75rem; min-width: 0; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cart-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; cursor: pointer; z-index: 2; padding: 10px; font-weight: bold; font-size: 0.9rem; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,1); color: rgba(255,255,255,0.95); border-radius: 0 0 var(--radius) var(--radius); overflow: hidden; min-height: 0; }
@@ -62,7 +70,7 @@
     .cart-file-label { font-size: 0.65rem; color: rgba(255,255,255,0.9); text-align: center; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px; font-weight: normal; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,1); }
     .cart.is-offline .cart-file-label { text-shadow: none; color: var(--warning); opacity: 0.7; }
     .cart-timer { position: absolute; bottom: 4px; right: 6px; font-family: 'Courier New', Courier, monospace; font-size: 0.7rem; font-weight: bold; color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px; pointer-events: none; z-index: 6; border: 1px solid rgba(255,255,255,0.1); }
-    .cart.is-empty .cart-timer, .cart.is-offline .cart-timer { display: none; }
+    .cart.is-empty .cart-timer, .cart.is-offline .cart-timer, .cart.is-modifier .cart-timer { display: none; }
     .progress-bar { position: absolute; bottom: 0; left: 0; height: 100%; background: rgba(0, 0, 0, 0.4); width: 0%; transition: width 0.05s linear; z-index: 1; pointer-events: none; }
 
     /* Widgets */
@@ -95,7 +103,7 @@
     .show-item .dim { color: var(--text-dim); font-weight: normal; font-size: 0.8rem; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-group label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: bold; }
-    .form-group input { background: #000; border: 1px solid #2d2d35; color: white; padding: 10px; border-radius: 6px; font-size: 1rem; }
+    .form-group input, .form-group select { background: #000; border: 1px solid #2d2d35; color: white; padding: 10px; border-radius: 6px; font-size: 1rem; font-family: inherit; }
     .modal-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 400; display: none; justify-content: center; align-items: center; }
   </style>
 </head>
@@ -127,6 +135,14 @@
   <div id="padSettingsModal" class="modal-backdrop">
     <div class="modal-card">
       <h2 id="settingsModalTitle">Configure Pad</h2>
+      <div class="form-group">
+        <label>Pad Type</label>
+        <select id="editPadType">
+          <option value="audio">🔊 Audio Playback</option>
+          <option value="modifier_loop">🔁 Logic: Global Loop</option>
+          <option value="modifier_crossfade">🔀 Logic: Global Crossfade</option>
+        </select>
+      </div>
       <div class="form-group"><label>Cue Title</label><input type="text" id="editPadTitle"></div>
       <div class="form-group"><label>Pad Color</label><input type="color" id="editPadColor" style="width: 100%; height: 40px; padding: 2px;"></div>
       <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -151,7 +167,7 @@
           <button class="header-btn" onclick="document.getElementById('assetBrowserInput').click()" style="color: var(--accent); border-color: var(--accent);">📂 IMPORT</button>
           <button class="header-btn" onclick="saveAndReturnToLobby()">💾 SAVE / LOBBY</button>
       </div>
-      <button class="stop-all-global" onclick="stopAllAudio()">🛑 STOP</button>
+      <button class="stop-all-global" onclick="stopAllAudio()">🛑 STOP ALL AUDIO</button>
     </header>
 
     <div class="workspace-wrapper" id="workspaceWrapper">
@@ -178,7 +194,7 @@
             <div>
               <div class="inspector-title">Active Inspector</div>
               <div id="inspectorDetail" style="font-size: 0.9rem; margin-top: 5px; margin-bottom: 12px; min-height: 35px;">Select a cart to view details...</div>
-              <button class="action-btn" onclick="sendActiveToEditor()" style="width: 100%; margin-bottom: 10px; border-color: var(--accent); color: var(--accent);">✏️ EDIT CUE</button>
+              <button id="btnSendToEditor" class="action-btn" onclick="sendActiveToEditor()" style="width: 100%; margin-bottom: 10px; border-color: var(--accent); color: var(--accent);">✏️ EDIT CUE</button>
             </div>
             <div class="waveform-preview-box" id="waveformWrapper">
               <canvas id="waveformCanvas"></canvas>
@@ -250,6 +266,10 @@
     let currentEditorPad = null;
     let currentShowName = "", gridConfig = { rows: 4, cols: 8 }, isEditModeActive = false, currentlyEditingPadIdx = null;
 
+    // V6 Fix: Global Logic Modifiers
+    let globalLoopActive = false;
+    let globalCrossfadeActive = false;
+
     document.addEventListener('touchstart', function() { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { passive: true });
     window.onload = () => { populateLobby(); startAnimLoop(); };
 
@@ -277,7 +297,7 @@
     function confirmCreateShow() {
       const name = document.getElementById('newShowName').value || 'Untitled Show'; const r = parseInt(document.getElementById('newShowRows').value) || 4; const c = parseInt(document.getElementById('newShowCols').value) || 8;
       const total = r * c; const banks = [];
-      for(let i=0; i<4; i++) { const bank = []; for(let j=0; j<total; j++) bank.push({ id: `p${i}c${j}`, title: `Slot ${j + 1}`, fileName: 'Empty', color: '#00f2ff', inPoint: 0, outPoint: null, gain: 1.0 }); banks.push(bank); }
+      for(let i=0; i<4; i++) { const bank = []; for(let j=0; j<total; j++) bank.push({ id: `p${i}c${j}`, title: `Slot ${j + 1}`, fileName: 'Empty', color: '#00f2ff', inPoint: 0, outPoint: null, gain: 1.0, padType: 'audio', latched: false }); banks.push(bank); }
       localStorage.setItem('ccc_show_' + name.replace(/\s+/g, '_').toLowerCase(), JSON.stringify({ name: name, rows: r, cols: c, banks: banks }));
       cancelCreate(); loadShow('ccc_show_' + name.replace(/\s+/g, '_').toLowerCase());
     }
@@ -285,9 +305,11 @@
     function loadShow(key) {
       const data = JSON.parse(localStorage.getItem(key)); currentShowName = data.name; gridConfig.rows = data.rows; gridConfig.cols = data.cols;
       currentPage = 0; selectedCartIdx = null; isEditModeActive = false; currentlyEditingPadIdx = null;
+      globalLoopActive = false; globalCrossfadeActive = false;
       document.getElementById('editModeToggle').checked = false; document.getElementById('workspaceWrapper').classList.remove('edit-mode-active');
       document.querySelectorAll('.page-btn').forEach((b, i) => b.classList.toggle('active', i === 0)); document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...';
-      soundBank = data.banks.map(b => b.map(c => ({ ...c, audioUrl: null, peakData: null, duration: 0, isPlaying: false, inPoint: c.inPoint || 0, outPoint: c.outPoint || null, gain: c.gain || 1.0 })));
+      
+      soundBank = data.banks.map(b => b.map(c => ({ ...c, audioUrl: null, peakData: null, duration: 0, isPlaying: false, inPoint: c.inPoint || 0, outPoint: c.outPoint || null, gain: c.gain || 1.0, padType: c.padType || 'audio', latched: false })));
       document.getElementById('activeShowLabel').innerText = `[ ${currentShowName} ]`;
       const cont = document.getElementById('cartContainer'); cont.style.gridTemplateColumns = `repeat(${gridConfig.cols}, 1fr)`; cont.style.gridTemplateRows = `repeat(${gridConfig.rows}, 1fr)`;
       document.getElementById('lobbyScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex';
@@ -298,12 +320,12 @@
     function saveCurrentShowState() {
       if(!currentShowName) return;
       const safeKey = 'ccc_show_' + currentShowName.replace(/\s+/g, '_').toLowerCase();
-      const serialized = soundBank.map(b => b.map(c => ({ id: c.id, title: c.title, fileName: c.fileName, color: c.color, inPoint: c.inPoint, outPoint: c.outPoint, gain: c.gain })));
+      const serialized = soundBank.map(b => b.map(c => ({ id: c.id, title: c.title, fileName: c.fileName, color: c.color, inPoint: c.inPoint, outPoint: c.outPoint, gain: c.gain, padType: c.padType })));
       localStorage.setItem(safeKey, JSON.stringify({ name: currentShowName, rows: gridConfig.rows, cols: gridConfig.cols, banks: serialized }));
     }
 
     function checkOfflineStatus() {
-      let hasOffline = false; for(let p=0; p<soundBank.length; p++) for(let c=0; c<soundBank[p].length; c++) if(soundBank[p][c].fileName !== 'Empty' && !soundBank[p][c].audioUrl) hasOffline = true;
+      let hasOffline = false; for(let p=0; p<soundBank.length; p++) for(let c=0; c<soundBank[p].length; c++) if(soundBank[p][c].padType === 'audio' && soundBank[p][c].fileName !== 'Empty' && !soundBank[p][c].audioUrl) hasOffline = true;
       document.getElementById('relinkBtn').style.display = hasOffline ? 'block' : 'none';
     }
 
@@ -311,7 +333,7 @@
       const files = Array.from(e.target.files);
       for(let f of files) for(let p=0; p<soundBank.length; p++) for(let c=0; c<soundBank[p].length; c++) {
         const cart = soundBank[p][c];
-        if(cart.fileName === f.name && !cart.audioUrl) {
+        if(cart.padType === 'audio' && cart.fileName === f.name && !cart.audioUrl) {
           cart.audioUrl = URL.createObjectURL(f);
           const arr = await f.arrayBuffer(); const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
           try {
@@ -325,42 +347,146 @@
     }
 
     function toggleEditMode(isActive) { isEditModeActive = isActive; const wrapper = document.getElementById('workspaceWrapper'); if(isActive) wrapper.classList.add('edit-mode-active'); else wrapper.classList.remove('edit-mode-active'); if(!isActive) saveCurrentShowState(); }
-    function openSettingsModal(idx) { currentlyEditingPadIdx = idx; const c = soundBank[currentPage][idx]; document.getElementById('settingsModalTitle').innerText = `Edit: ${c.title}`; document.getElementById('editPadTitle').value = c.title; document.getElementById('editPadColor').value = c.color; document.getElementById('padSettingsModal').style.display = 'flex'; }
+    
+    function openSettingsModal(idx) { 
+      currentlyEditingPadIdx = idx; const c = soundBank[currentPage][idx]; 
+      document.getElementById('settingsModalTitle').innerText = `Edit: ${c.title}`; 
+      document.getElementById('editPadTitle').value = c.title; 
+      document.getElementById('editPadColor').value = c.color; 
+      document.getElementById('editPadType').value = c.padType || 'audio';
+      document.getElementById('padSettingsModal').style.display = 'flex'; 
+    }
+    
     function closeSettingsModal() { document.getElementById('padSettingsModal').style.display = 'none'; }
-    function saveSettingsModal() { if(currentlyEditingPadIdx === null) return; const c = soundBank[currentPage][currentlyEditingPadIdx]; c.title = document.getElementById('editPadTitle').value; c.color = document.getElementById('editPadColor').value; closeSettingsModal(); renderGrid(); updateInspector(); }
+    
+    function saveSettingsModal() { 
+      if(currentlyEditingPadIdx === null) return; 
+      const c = soundBank[currentPage][currentlyEditingPadIdx]; 
+      c.title = document.getElementById('editPadTitle').value; 
+      c.color = document.getElementById('editPadColor').value; 
+      c.padType = document.getElementById('editPadType').value;
+      
+      if(c.padType !== 'audio') { c.fileName = 'Empty'; c.audioUrl = null; c.latched = false; }
+      if(c.padType === 'modifier_loop') globalLoopActive = false;
+      if(c.padType === 'modifier_crossfade') globalCrossfadeActive = false;
+      
+      closeSettingsModal(); renderGrid(); updateInspector(); checkOfflineStatus();
+    }
 
     function renderGrid() {
       const container = document.getElementById('cartContainer'); container.innerHTML = '';
       soundBank[currentPage].forEach((cart, i) => {
-        const isBlank = cart.fileName === 'Empty'; const isOffline = !isBlank && !cart.audioUrl;
-        let cClass = `cart`; if (selectedCartIdx === i) cClass += ` selected`; if (isBlank) cClass += ` is-empty`; if (isOffline) cClass += ` is-offline`;
+        const isModifier = cart.padType && cart.padType.startsWith('modifier');
+        const isBlank = cart.padType === 'audio' && cart.fileName === 'Empty'; 
+        const isOffline = cart.padType === 'audio' && !isBlank && !cart.audioUrl;
+        
+        let cClass = `cart`; 
+        if (selectedCartIdx === i) cClass += ` selected`; 
+        if (isBlank) cClass += ` is-empty`; 
+        if (isOffline) cClass += ` is-offline`;
+        if (isModifier) cClass += ` is-modifier`;
+        if (cart.latched) cClass += ` latched`;
+        
         const div = document.createElement('div'); div.className = cClass; div.id = `cart-wrap-${cart.id}`; 
-        let tTxt = cart.isPlaying ? 'STOP' : (cart.audioUrl ? 'PLAY' : (isOffline ? 'OFFLINE' : 'EMPTY'));
-        let bStyle = (!isBlank && !isOffline) ? `background: ${cart.color}; box-shadow: inset 0 2px 10px rgba(255,255,255,0.2), inset 0 -4px 10px rgba(0,0,0,0.3);` : '';
+        
+        let triggerText = "EMPTY";
+        let subText = "";
+        let bStyle = "";
+        let pbHTML = "";
+
+        if (isModifier) {
+            triggerText = cart.padType === 'modifier_loop' ? "🔁 LOOP" : "🔀 CROSSFADE";
+            subText = cart.latched ? "ACTIVE" : "TAP TO LATCH";
+        } else {
+            triggerText = cart.isPlaying ? 'STOP' : (cart.audioUrl ? 'PLAY' : (isOffline ? 'OFFLINE' : 'EMPTY'));
+            subText = cart.fileName;
+            bStyle = (!isBlank && !isOffline) ? `background: ${cart.color}; box-shadow: inset 0 2px 10px rgba(255,255,255,0.2), inset 0 -4px 10px rgba(0,0,0,0.3);` : '';
+            pbHTML = `<div class="progress-bar" id="pb-${cart.id}"></div>`;
+        }
+        
         const playLen = cart.audioUrl ? ((cart.outPoint || cart.duration) - (cart.inPoint || 0)) : 0;
-        div.innerHTML = `<div class="progress-bar" id="pb-${cart.id}"></div><div class="cart-header"><span style="font-size:0.75rem; font-weight:bold; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cart.title}</span><div style="width:12px;height:12px;border-radius:50%;background:${cart.color};flex-shrink:0;"></div></div><div class="cart-body ${cart.isPlaying ? 'playing' : ''}" id="cart-body-${cart.id}" style="${bStyle}"><div class="cart-file-label">${cart.fileName}</div><div>${tTxt}</div><div class="cart-timer" id="tmr-${cart.id}">${cart.audioUrl && !cart.isPlaying ? fmtTime(playLen) : ''}</div></div>`;
-        const cb = div.querySelector('.cart-body'); cb.addEventListener('touchstart', (e) => { e.preventDefault(); div.classList.add('phys-press'); if(selectedCartIdx !== i) selectCart(i); handlePlay(e, i); }, { passive: false }); div.addEventListener('touchend', () => div.classList.remove('phys-press'));
+        
+        div.innerHTML = `${pbHTML}
+          <div class="cart-header">
+            <span style="font-size:0.75rem; font-weight:bold; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cart.title}</span>
+            <div style="width:12px;height:12px;border-radius:50%;background:${cart.color};flex-shrink:0;"></div>
+          </div>
+          <div class="cart-body ${cart.isPlaying ? 'playing' : ''}" id="cart-body-${cart.id}" style="${bStyle}">
+            <div class="cart-file-label">${subText}</div><div>${triggerText}</div>
+            <div class="cart-timer" id="tmr-${cart.id}">${cart.audioUrl && !cart.isPlaying ? fmtTime(playLen) : ''}</div>
+          </div>`;
+          
+        const cb = div.querySelector('.cart-body'); 
+        cb.addEventListener('touchstart', (e) => { e.preventDefault(); div.classList.add('phys-press'); if(selectedCartIdx !== i) selectCart(i); handlePlay(e, i); }, { passive: false }); 
+        div.addEventListener('touchend', () => div.classList.remove('phys-press'));
         container.appendChild(div);
       });
     }
 
-    async function handlePlay(e, idx) { e.stopPropagation(); if(isEditModeActive) { openSettingsModal(idx); return; } const cart = soundBank[currentPage][idx]; if(!cart.audioUrl) return; if(audioCtx.state === 'suspended') await audioCtx.resume(); if(cart.isPlaying) stopCart(cart.id); else playCart(cart); }
+    async function handlePlay(e, idx) { 
+      e.stopPropagation(); 
+      if(isEditModeActive) { openSettingsModal(idx); return; } 
+      
+      const cart = soundBank[currentPage][idx]; 
+      
+      // Execute Logic Modifiers
+      if (cart.padType === 'modifier_loop') {
+          cart.latched = !cart.latched; globalLoopActive = cart.latched; renderGrid(); return;
+      }
+      if (cart.padType === 'modifier_crossfade') {
+          cart.latched = !cart.latched; globalCrossfadeActive = cart.latched; renderGrid(); return;
+      }
+      
+      // Standard Audio Play
+      if(!cart.audioUrl) return; 
+      if(audioCtx.state === 'suspended') await audioCtx.resume(); 
+      if(cart.isPlaying) stopCart(cart.id); else playCart(cart); 
+    }
+
+    function crossfadeAllOut() {
+        const fadeTime = 1.5;
+        activeSources.forEach(s => {
+            if (s.isFading) return; 
+            s.isFading = true;
+            s.gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            s.gainNode.gain.setValueAtTime(s.gainNode.gain.value, audioCtx.currentTime);
+            s.gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + fadeTime);
+            setTimeout(() => { stopCart(s.id); }, fadeTime * 1000);
+        });
+    }
 
     function playCart(cart) {
-      if(document.getElementById('exclusiveToggle').checked) stopAllAudio();
+      if(document.getElementById('exclusiveToggle').checked) {
+          if (globalCrossfadeActive) crossfadeAllOut();
+          else stopAllAudio();
+      }
+      
       const audioEl = new Audio(cart.audioUrl); const source = audioCtx.createMediaElementSource(audioEl);
-      const cartGain = audioCtx.createGain(); cartGain.gain.value = cart.gain || 1.0;
+      const cartGain = audioCtx.createGain(); 
+      
+      if (globalCrossfadeActive) {
+          cartGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+          cartGain.gain.linearRampToValueAtTime(cart.gain || 1.0, audioCtx.currentTime + 1.5);
+      } else {
+          cartGain.gain.value = cart.gain || 1.0;
+      }
+      
       const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
       source.connect(cartGain); cartGain.connect(analyser); analyser.connect(masterGain); 
       
       audioEl.currentTime = cart.inPoint || 0; 
       audioEl.play(); cart.isPlaying = true;
 
-      const checkOutPoint = () => { if (cart.outPoint && audioEl.currentTime >= cart.outPoint) { stopCart(cart.id); audioEl.removeEventListener('timeupdate', checkOutPoint); } };
+      const checkOutPoint = () => { 
+          if (cart.outPoint && audioEl.currentTime >= cart.outPoint) { 
+              if (globalLoopActive) { audioEl.currentTime = cart.inPoint || 0; } // V6 Fix: Loop dynamically catches current playback
+              else { stopCart(cart.id); audioEl.removeEventListener('timeupdate', checkOutPoint); }
+          } 
+      };
       audioEl.addEventListener('timeupdate', checkOutPoint);
 
       const playLen = (cart.outPoint || cart.duration) - (cart.inPoint || 0);
-      activeSources.push({ id: cart.id, source: audioEl, mediaElementNode: source, gainNode: cartGain, startOffset: cart.inPoint || 0, playLen: playLen, analyser: analyser, dataArray: new Uint8Array(analyser.frequencyBinCount), color: cart.color, outCheck: checkOutPoint });
+      activeSources.push({ id: cart.id, source: audioEl, mediaElementNode: source, gainNode: cartGain, startOffset: cart.inPoint || 0, playLen: playLen, analyser: analyser, dataArray: new Uint8Array(analyser.frequencyBinCount), color: cart.color, outCheck: checkOutPoint, isFading: false });
       audioEl.onended = () => { stopCart(cart.id); }; renderGrid();
     }
 
@@ -386,35 +512,17 @@
       const tempAudio = new Audio(url);
       tempAudio.onloadedmetadata = async () => {
           cart.duration = tempAudio.duration; if(!cart.outPoint || cart.outPoint > cart.duration) cart.outPoint = cart.duration;
-          
-          // Generate peaks
-          const arr = await file.arrayBuffer();
-          const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
-          try {
-              const buffer = await tempCtx.decodeAudioData(arr);
-              cart.peakData = await generatePeaksForBuffer(buffer, 1000);
-          } catch(e) { cart.peakData = [new Float32Array(1000)]; }
-
+          const arr = await file.arrayBuffer(); const tempCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+          try { const buffer = await tempCtx.decodeAudioData(arr); cart.peakData = await generatePeaksForBuffer(buffer, 1000); } catch(e) { cart.peakData = [new Float32Array(1000)]; }
           renderGrid(); checkOfflineStatus(); if (idx === selectedCartIdx) { requestAnimationFrame(() => { resizeAllCanvases(); drawWaveform(); }); }
       };
     }
 
-    // MULTI-CHANNEL PEAK GENERATOR
     async function generatePeaksForBuffer(buffer, numPoints = 2000) {
-        const numChannels = buffer.numberOfChannels;
-        const allPeaks = [];
+        const numChannels = buffer.numberOfChannels; const allPeaks = [];
         for (let c = 0; c < numChannels; c++) {
-            const data = buffer.getChannelData(c);
-            const step = Math.ceil(data.length / numPoints);
-            const peaks = new Float32Array(numPoints);
-            for (let i = 0; i < numPoints; i++) {
-                let max = 0;
-                for (let j = 0; j < step; j++) {
-                    const val = Math.abs(data[(i * step) + j]);
-                    if (val > max) max = val;
-                }
-                peaks[i] = max;
-            }
+            const data = buffer.getChannelData(c); const step = Math.ceil(data.length / numPoints); const peaks = new Float32Array(numPoints);
+            for (let i = 0; i < numPoints; i++) { let max = 0; for (let j = 0; j < step; j++) { const val = Math.abs(data[(i * step) + j]); if (val > max) max = val; } peaks[i] = max; }
             allPeaks.push(peaks);
         }
         return allPeaks;
@@ -422,9 +530,19 @@
 
     function switchPage(p) { currentPage = p; selectedCartIdx = null; updateInspector(); document.querySelectorAll('.page-btn').forEach((b, i) => b.classList.toggle('active', i === p)); renderGrid(); }
     function selectCart(idx) { selectedCartIdx = idx; renderGrid(); updateInspector(); drawWaveform(); }
+    
     function updateInspector() {
-      if(selectedCartIdx === null) { document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...'; drawWaveform(); return; }
-      const c = soundBank[currentPage][selectedCartIdx]; document.getElementById('inspectorDetail').innerHTML = `<b style="color:${c.color}; font-size:1.1rem;">${c.title}</b><br><span style="font-size:0.75rem; color:var(--text-dim);">${c.fileName}</span>`;
+      if(selectedCartIdx === null) { document.getElementById('inspectorDetail').innerHTML = 'Select a cart to view details...'; document.getElementById('btnSendToEditor').style.display = 'none'; drawWaveform(); return; }
+      const c = soundBank[currentPage][selectedCartIdx]; 
+      
+      if (c.padType && c.padType !== 'audio') {
+          document.getElementById('inspectorDetail').innerHTML = `<b style="color:${c.color}; font-size:1.1rem;">${c.title}</b><br><span style="font-size:0.75rem; color:var(--text-dim);">Logic Modifier</span>`;
+          document.getElementById('btnSendToEditor').style.display = 'none';
+      } else {
+          document.getElementById('inspectorDetail').innerHTML = `<b style="color:${c.color}; font-size:1.1rem;">${c.title}</b><br><span style="font-size:0.75rem; color:var(--text-dim);">${c.fileName}</span>`;
+          document.getElementById('btnSendToEditor').style.display = 'block';
+      }
+      drawWaveform();
     }
 
     function fmtTime(s) { if(isNaN(s) || s < 0) s = 0; const m = Math.floor(s / 60); const sec = Math.floor(s % 60).toString().padStart(2, '0'); const ms = Math.floor((s % 1) * 10); return `${m}:${sec}.${ms}`; }
@@ -433,10 +551,12 @@
     function resizeAllCanvases() { forceCanvasDimensions('waveformCanvas', 'waveformWrapper'); forceCanvasDimensions('editorCanvas', 'editorWaveWrapper'); }
     window.addEventListener('resize', () => { resizeAllCanvases(); drawWaveform(); drawEditor(); updateEditorVisuals(); });
 
-    // MULTI-CHANNEL CANVAS RENDERER: INSPECTOR
     function drawWaveform() {
       forceCanvasDimensions('waveformCanvas', 'waveformWrapper'); const canvas = document.getElementById('waveformCanvas'); const ctx = canvas.getContext('2d'); if (canvas.width === 0 || canvas.height === 0) return; ctx.clearRect(0,0,canvas.width, canvas.height);
-      if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; if(!cart || !cart.peakData || !cart.peakData.length) { document.getElementById('cueMarker').style.display = 'none'; return; }
+      if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; 
+      
+      if(cart.padType !== 'audio') { document.getElementById('cueMarker').style.display = 'none'; return; }
+      if(!cart || !cart.peakData || !cart.peakData.length) { document.getElementById('cueMarker').style.display = 'none'; return; }
       
       const duration = cart.duration || 1; const winSize = duration / zoomFactor; const start = (duration - winSize) * (scrollPos / 100);
       const numChannels = cart.peakData.length; const trackHeight = canvas.height / numChannels;
@@ -476,10 +596,20 @@
       frame();
     }
 
+    // V6 Fix: Editor Handoff uses fetch for stable links
     function sendActiveToEditor() {
-        if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; if(!cart.audioUrl) return;
+        if(selectedCartIdx === null) return; const cart = soundBank[currentPage][selectedCartIdx]; 
+        if(cart.padType !== 'audio' || !cart.audioUrl) return;
+        
         currentEditorPad = cart;
-        fetch(cart.audioUrl).then(r => r.blob()).then(blob => { loadEditorFile(new File([blob], cart.fileName, {type: blob.type})); switchView('editor'); });
+        
+        fetch(cart.audioUrl).then(r => r.blob()).then(blob => { 
+            const f = new File([blob], cart.fileName, {type: blob.type});
+            loadEditorFile(f); 
+            switchView('editor'); 
+        }).catch(err => {
+            alert("Error: Audio file reference was dropped by iOS. Please tap 'Re-Link Audio' first.");
+        });
     }
 
     async function loadEditorFile(file) {
@@ -512,7 +642,6 @@
         document.getElementById('editorDimLeft').style.width = `${pctIn}%`; document.getElementById('editorDimRight').style.width = `${pctOut}%`;
     }
 
-    // MULTI-CHANNEL CANVAS RENDERER: EDITOR
     function drawEditor() {
         forceCanvasDimensions('editorCanvas', 'editorWaveWrapper'); const canvas = document.getElementById('editorCanvas'); const ctx = canvas.getContext('2d');
         if (!editorPeaks || !editorPeaks.length || canvas.width === 0) return; ctx.clearRect(0,0,canvas.width, canvas.height);
